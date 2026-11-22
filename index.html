@@ -87,7 +87,7 @@ dialog .card{box-shadow:none}
 
 <section class="step" id="s2"><div class="wrap">
  <div class="row" style="margin-bottom:14px"><h2 style="margin:0;font-size:17px" id="qcount"></h2><span class="sp"></span>
-  <button class="b" id="addT">+ Tossup</button><button class="b" id="addB">+ Bonus</button><button class="b" id="favs">★ Favorites</button></div>
+  <button class="b" id="addT">+ Tossup</button><button class="b" id="addB">+ Bonus</button><button class="b" id="dedupe">Remove duplicates</button><button class="b" id="favs">★ Favorites</button></div>
  <div id="qlist"></div>
  <div class="foot"><button class="b" data-go="1">← Generate</button><span class="sp"></span><button class="b p" data-go="3">Layout →</button></div>
 </div></section>
@@ -107,11 +107,12 @@ const CATS=['Literature','History','Science','Fine Arts','Religion','Mythology',
 const DIFFS=[[1,'Middle school'],[2,'Easy HS'],[3,'Regular HS'],[4,'Hard HS'],[5,'National HS'],[6,'Easy college'],[7,'Regular college'],[8,'Hard college'],[9,'College nationals'],[10,'Open']];
 const FONTS=['Georgia','Times New Roman','Palatino Linotype','Garamond','Arial','Verdana','Calibri','Courier New','system-ui'];
 const PRESETS={
- compact:{font:'Times New Roman',size:10,lh:1.15,gap:5,margin:.5,meta:false,hdr:false,keep:false,bold:true,answers:'inline',group:true},
- readable:{font:'Georgia',size:12,lh:1.5,gap:16,margin:1,meta:true,hdr:true,keep:true,bold:true,answers:'inline',group:true}};
+ compact:{font:'Times New Roman',size:10,lh:1.15,gap:5,margin:.5,meta:false,hdr:false,keep:false,bold:true,answers:'inline',order:'group'},
+ readable:{font:'Georgia',size:12,lh:1.5,gap:16,margin:1,meta:true,hdr:true,keep:true,bold:true,answers:'inline',order:'group'}};
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
 let Q=LS('qbpc2.q')||[],favs=LS('qbpc2.fav')||[],step=1;
 const S={title:'Practice Packet',sub:'',paper:'Letter',pb:false,pnum:true,layout:'readable',...PRESETS.readable,...(LS('qbpc2.s')||{})};
+if(!(LS('qbpc2.s')||{}).order&&S.group===false)S.order='list';delete S.group;
 const persist=()=>{LS('qbpc2.s',S);LS('qbpc2.q',Q);LS('qbpc2.fav',favs)};
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)};
 
@@ -122,6 +123,13 @@ function go(n){step=n;const sec=n>3?3:n;document.querySelectorAll('.step').forEa
  if(n===2)list();if(n>=3){$('#layp').hidden=n===4;$('#exp').hidden=n!==4;paginate()}window.scrollTo(0,0)}
 $('#steps').onclick=e=>{const b=e.target.closest('button');if(b)go(+b.dataset.n)};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(+b.dataset.go)});
+
+/* duplicate detection */
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const qkey=q=>q.type+':'+norm(q.type==='t'?q.text:q.leadin+' '+q.parts.join(' ')).slice(0,90);
+const hasText=q=>qkey(q).length>8;
+function uniq(arr,seen){const out=[];for(const q of arr){const k=qkey(q);if(hasText(q)&&seen.has(k))continue;seen.add(k);out.push(q)}return out}
+const isDup=(q,i)=>hasText(q)&&Q.findIndex(x=>qkey(x)===qkey(q))<i;
 
 /* step 1 */
 $('#cats').innerHTML=CATS.map(c=>`<label class="chip"><input type="checkbox" value="${c}">${c}</label>`).join('');
@@ -142,10 +150,15 @@ $('#go').onclick=async()=>{
  if(!nt&&!nb)return($('#st').textContent='Enter at least one tossup or bonus.');
  btn.disabled=true;$('#st').textContent='Fetching from qbreader.org…';
  try{
-  const [T,B]=await Promise.all([nt?fetchQ('tossup',nt):[],nb?fetchQ('bonus',nb):[]]);
-  const add=[...T.map(toT),...B.map(toB)];
-  Q=$('#rep').checked?add:[...Q,...add];persist();
-  $('#st').textContent=(T.length<nt||B.length<nb)?`Only ${T.length} tossups and ${B.length} bonuses matched those filters.`:'';
+  const base=$('#rep').checked?[]:Q,seen=new Set(base.filter(hasText).map(qkey));
+  let T=[],B=[],dup=0;
+  for(let tries=0;tries<4&&(T.length<nt||B.length<nb);tries++){
+   const [rt,rb]=await Promise.all([T.length<nt?fetchQ('tossup',nt-T.length):[],B.length<nb?fetchQ('bonus',nb-B.length):[]]);
+   const a=rt.map(toT),b=rb.map(toB),u1=uniq(a,seen),u2=uniq(b,seen);
+   dup+=a.length+b.length-u1.length-u2.length;T.push(...u1);B.push(...u2);
+  }
+  Q=[...base,...T,...B];persist();
+  toast(`Added ${T.length} tossups and ${B.length} bonuses.`+(dup?` Skipped ${dup} duplicate${dup>1?'s':''}.`:'')+((T.length<nt||B.length<nb)?' Fewer unique questions matched your filters than requested.':''));
   go(2);
  }catch(e){$('#st').textContent='Could not reach QBReader: '+e.message+'. Check your connection and try again.'}
  btn.disabled=false;
@@ -158,7 +171,7 @@ function btn(l,t,fn,cls=''){const b=document.createElement('button');b.className
 function card(q,i){
  const d=document.createElement('div');d.className='card';
  const n=Q.slice(0,i+1).filter(x=>x.type===q.type).length;
- d.innerHTML=`<div class="tg"><span class="badge">${q.type==='t'?'Tossup':'Bonus'} ${n}</span>${h(metaOf(q))}</div>`+(q.type==='t'?`<p>${h(q.text)}</p><p class="an">ANSWER: ${h(q.ans)}</p>`
+ d.innerHTML=`<div class="tg"><span class="badge">${q.type==='t'?'Tossup':'Bonus'} ${n}</span>${isDup(q,i)?'<span class="badge" style="background:#5a2a2a;color:#ffb4b4">Duplicate</span>':''}${h(metaOf(q))}</div>`+(q.type==='t'?`<p>${h(q.text)}</p><p class="an">ANSWER: ${h(q.ans)}</p>`
   :`<p>${h(q.leadin)}</p>`+q.parts.map((p,k)=>`<p class="pt">[${q.values?.[k]??10}] ${h(p)}</p><p class="an">ANSWER: ${h(q.answers[k])}</p>`).join(''));
  const a=document.createElement('div');a.className='ac';d.append(a);
  const isFav=q.fid&&favs.some(f=>f.fid===q.fid);
@@ -177,7 +190,8 @@ function list(){
  Q.forEach((q,i)=>el.append(card(q,i)));
 }
 const blank=t=>t==='t'?{type:'t',text:'',ans:'',cat:'Custom'}:{type:'b',leadin:'',parts:['','',''],answers:['','',''],values:[10,10,10],cat:'Custom'};
-const addNew=t=>{const q=blank(t);edit(q,()=>{Q.push(q);persist();list()})};
+const addNew=t=>{const q=blank(t);edit(q,()=>{if(hasText(q)&&Q.some(x=>qkey(x)===qkey(q)))toast('This matches a question you already have');Q.push(q);persist();list()})};
+$('#dedupe').onclick=()=>{const n=Q.length;Q=uniq(Q,new Set());persist();list();toast(n>Q.length?`Removed ${n-Q.length} duplicate${n-Q.length>1?'s':''}`:'No duplicates found')};
 $('#addT').onclick=()=>addNew('t');$('#addB').onclick=()=>addNew('b');
 function edit(q,done){
  const t=q.type==='t',dlg=$('#dlg');
@@ -196,13 +210,13 @@ $('#favs').onclick=()=>{
   favs.forEach(q=>{const d=document.createElement('div');d.className='card';
    d.innerHTML=`<div class="tg"><span class="badge">${q.type==='t'?'Tossup':'Bonus'}</span>${h(metaOf(q))}</div><p>${h((q.type==='t'?q.text:q.leadin).slice(0,180))}…</p><p class="an">${h(q.type==='t'?q.ans:q.answers.join(' / '))}</p>`;
    const a=document.createElement('div');a.className='ac';d.append(a);
-   a.append(btn('Remove','Remove favorite',()=>{favs=favs.filter(f=>f!==q);persist();draw();list()}),btn('+ Add to packet','',()=>{Q.push(JSON.parse(JSON.stringify(q)));persist();list();toast('Added to your questions')},'p'));
+   a.append(btn('Remove','Remove favorite',()=>{favs=favs.filter(f=>f!==q);persist();draw();list()}),btn('+ Add to packet','',()=>{if(hasText(q)&&Q.some(x=>qkey(x)===qkey(q)))return toast('Already in your questions');Q.push(JSON.parse(JSON.stringify(q)));persist();list();toast('Added to your questions')},'p'));
    fl.append(d)})};
  draw();dlg.showModal();
 };
 
 /* step 3: controls */
-const SPEC=[['title','Title','text'],['sub','Subtitle','text'],['font','Font (whole document)','sel',FONTS],['size','Font size (pt)','num',[6,24,.5]],['lh','Line spacing','num',[1,2.5,.05]],['gap','Space between questions (pt)','num',[0,48,1]],['margin','Margins (in)','num',[.25,2,.05]],['paper','Paper size','sel',['Letter','A4']],['answers','Answers','sel',[['inline','After each question'],['end','Answer key at the end'],['none','Hide answers']]],['keep','Never split a question across pages','chk'],['group','Tossups first, then bonuses','chk'],['pb','Start bonuses on a new page','chk'],['meta','Show category, difficulty and source','chk'],['bold','Bold answer lines','chk'],['hdr','Running header','chk'],['pnum','Page numbers','chk']];
+const SPEC=[['title','Title','text'],['sub','Subtitle','text'],['font','Font (whole document)','sel',FONTS],['size','Font size (pt)','num',[6,24,.5]],['lh','Line spacing','num',[1,2.5,.05]],['gap','Space between questions (pt)','num',[0,48,1]],['margin','Margins (in)','num',[.25,2,.05]],['paper','Paper size','sel',['Letter','A4']],['answers','Answers','sel',[['inline','After each question'],['end','Answer key at the end'],['none','Hide answers']]],['keep','Never split a question across pages','chk'],['order','Question order','sel',[['group','Tossups first, then bonuses'],['alt','Alternate tossup and bonus'],['list','Same order as the Edit page']]],['pb','Start bonuses on a new page','chk'],['meta','Show category, difficulty and source','chk'],['bold','Bold answer lines','chk'],['hdr','Running header','chk'],['pnum','Page numbers','chk']];
 function ctl(){
  $('#seg').innerHTML=`<button data-l="compact" class="${S.layout==='compact'?'on':''}">Compact<small>Dense, like NAQT packets</small></button><button data-l="readable" class="${S.layout==='readable'?'on':''}">Readable<small>Roomy, clearly separated</small></button>`;
  $('#lay').innerHTML='<h3>Text and page</h3>'+SPEC.map(([k,l,t,o])=>{
@@ -218,15 +232,19 @@ ctl();
 
 /* step 3: document */
 const an=a=>`<p class="an">ANSWER: ${h(a)}</p>`;
+function order(){const T=Q.filter(q=>q.type==='t'),B=Q.filter(q=>q.type==='b');
+ if(S.order==='group')return[...T,...B];
+ if(S.order==='alt'){const o=[];for(let i=0;i<Math.max(T.length,B.length);i++){if(T[i])o.push(T[i]);if(B[i])o.push(B[i])}return o}
+ return Q}
 function units(){
- const T=Q.filter(q=>q.type==='t'),B=Q.filter(q=>q.type==='b'),seq=S.group?[...T,...B]:Q;
+ const T=Q.filter(q=>q.type==='t'),B=Q.filter(q=>q.type==='b'),seq=order(),G=S.order==='group';
  const U=[{hd:1,els:[`<div class="ti">${h(S.title)}</div>${S.sub?`<div class="st">${h(S.sub)}</div>`:''}`]}];
  let nt=0,nb=0,last='';
  for(const q of seq){
-  if(S.group&&q.type!==last){last=q.type;U.push({head:1,brk:q.type==='b'&&S.pb&&T.length>0,els:[q.type==='t'?'Tossups':'Bonuses']})}
+  if(G&&q.type!==last){last=q.type;U.push({head:1,brk:q.type==='b'&&S.pb&&T.length>0,els:[q.type==='t'?'Tossups':'Bonuses']})}
   const n=q.type==='t'?++nt:++nb,inl=S.answers==='inline';
-  const parts=q.type==='t'?[`<p><b>${n}.</b> ${h(q.text)}</p>${inl?an(q.ans):''}`]
-   :[`<p><b>${n}.</b> ${h(q.leadin)}</p>`,...q.parts.map((p,i)=>`<p>[${q.values?.[i]??10}] ${h(p)}</p>${inl?an(q.answers[i]):''}`)];
+  const parts=q.type==='t'?[`<p><b>${G?n+'.':(q.type==='t'?'Tossup ':'Bonus ')+n+'.'}</b> ${h(q.text)}</p>${inl?an(q.ans):''}`]
+   :[`<p><b>${G?n+'.':(q.type==='t'?'Tossup ':'Bonus ')+n+'.'}</b> ${h(q.leadin)}</p>`,...q.parts.map((p,i)=>`<p>[${q.values?.[i]??10}] ${h(p)}</p>${inl?an(q.answers[i]):''}`)];
   if(S.meta&&metaOf(q))parts[parts.length-1]+=`<div class="mt">${h(metaOf(q))}</div>`;
   U.push({els:S.keep?[parts.join('')]:parts});
  }
@@ -266,10 +284,10 @@ function paginate(){
 }
 function asText(){
  const out=[S.title,S.sub,''];let nt=0,nb=0;
- const T=Q.filter(q=>q.type==='t'),B=Q.filter(q=>q.type==='b'),seq=S.group?[...T,...B]:Q,ans=S.answers!=='none';
+ const T=Q.filter(q=>q.type==='t'),B=Q.filter(q=>q.type==='b'),seq=order(),G=S.order==='group',ans=S.answers!=='none';
  for(const q of seq){
-  if(q.type==='t')out.push(`${++nt}. ${q.text}`,...(ans?['ANSWER: '+q.ans]:[]),'');
-  else out.push(`${++nb}. ${q.leadin}`,...q.parts.flatMap((p,i)=>[`[${q.values?.[i]??10}] ${p}`,...(ans?['ANSWER: '+q.answers[i]]:[])]),'');
+  if(q.type==='t')out.push(`${(G?'':'Tossup ')+(++nt)+'.'} ${q.text}`,...(ans?['ANSWER: '+q.ans]:[]),'');
+  else out.push(`${(G?'':'Bonus ')+(++nb)+'.'} ${q.leadin}`,...q.parts.flatMap((p,i)=>[`[${q.values?.[i]??10}] ${p}`,...(ans?['ANSWER: '+q.answers[i]]:[])]),'');
  }
  return out.join('\n').trim();
 }
