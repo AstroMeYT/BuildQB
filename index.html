@@ -70,34 +70,47 @@ dialog .card{box-shadow:none}
  #s3.on{display:block;height:auto}#prev{overflow:visible}#pages{padding:0;zoom:1!important}
  .page{box-shadow:none;margin:0;break-after:page}.page:last-child{break-after:auto}
 }
+.dg{display:grid;grid-template-columns:1fr 90px 90px;gap:8px 10px;align-items:center;font-size:13.5px}
+.dg input{width:100%;padding:6px 8px;font:inherit;color:var(--ink);border:1px solid var(--ln);border-radius:7px;background:#12141a}
+.dg b{font-size:12px;color:var(--mut)}
+dialog ul{padding-left:18px;margin:6px 0 12px}dialog li{margin-bottom:4px;font-size:13.5px}
+dialog details{margin:6px 0;font-size:13px;color:var(--mut)}dialog summary{cursor:pointer}
+.vtag{font-size:12px;color:var(--mut);margin:0 0 6px}
 </style></head>
 <body>
 <header><h1>Packet Builder</h1>
- <div id="steps"></div><span style="width:110px"></span></header>
+ <div id="steps"></div><button class="b s" id="wn">What's new</button></header>
 
 <section class="step" id="s1"><div class="wrap">
- <div class="panel"><h2>How many questions?</h2><p class="sub">Questions are pulled at random from QBReader.</p>
-  <div class="two"><label class="f">Tossups<input type="number" id="nt" min="0" max="50" value="20"></label>
-  <label class="f">Bonuses<input type="number" id="nb" min="0" max="50" value="20"></label></div></div>
- <div class="panel"><h2>Genres</h2><p class="sub">Leave all unselected to include every genre.</p><div class="chips" id="cats"></div></div>
+ <div class="panel"><h2>Question mix</h2><p class="sub">Random picks from any genre you select. By genre lets you set exactly how many of each.</p>
+  <div class="row"><label class="chip"><input type="radio" name="mix" value="random" checked>Random mix</label><label class="chip"><input type="radio" name="mix" value="genre">By genre</label></div></div>
+ <div id="m-random">
+  <div class="panel"><h2>How many questions?</h2><p class="sub">Questions are pulled at random from QBReader.</p>
+   <div class="two"><label class="f">Tossups<input type="number" id="nt" min="0" max="50" value="20"></label>
+   <label class="f">Bonuses<input type="number" id="nb" min="0" max="50" value="20"></label></div></div>
+  <div class="panel"><h2>Genres</h2><p class="sub">Leave all unselected to include every genre.</p><div class="chips" id="cats"></div></div>
+ </div>
+ <div id="m-genre" hidden><div class="panel"><h2>Questions per genre</h2>
+  <div class="row" style="margin-bottom:12px"><button class="b s" id="std">Fill a standard 20 + 20 split</button><button class="b s" id="zero">Clear</button><span class="sp"></span><span id="dtot" style="color:var(--mut);font-size:13px"></span></div>
+  <div class="dg" id="dgrid"></div></div></div>
  <div class="panel"><h2>Difficulty levels</h2><p class="sub">Leave all unselected to include every level.</p><div class="chips" id="diffs"></div></div>
  <div class="panel"><label class="c"><input type="checkbox" id="rep" checked> Replace the questions I already have</label>
-  <div class="row"><button class="b p" id="go">Generate questions</button><button class="b" id="skip">Continue with current questions</button></div><div id="st"></div></div>
+  <div class="row"><button class="b p" id="go">Generate questions</button><button class="b" id="skip">Continue with current questions</button><button class="b" id="open">Open .qbp file…</button><input type="file" id="file" accept=".qbp,.json" hidden></div><div id="st"></div></div>
 </div></section>
 
 <section class="step" id="s2"><div class="wrap">
  <div class="row" style="margin-bottom:14px"><h2 style="margin:0;font-size:17px" id="qcount"></h2><span class="sp"></span>
-  <button class="b" id="addT">+ Tossup</button><button class="b" id="addB">+ Bonus</button><button class="b" id="dedupe">Remove duplicates</button><button class="b" id="favs">★ Favorites</button></div>
+  <button class="b" id="addT">+ Tossup</button><button class="b" id="addB">+ Bonus</button><button class="b" id="dedupe">Remove duplicates</button><button class="b" id="favs">★ Favorites</button><button class="b" id="save">Save .qbp</button></div>
  <div id="qlist"></div>
  <div class="foot"><button class="b" data-go="1">← Generate</button><span class="sp"></span><button class="b p" data-go="3">Layout →</button></div>
 </div></section>
 
 <section class="step" id="s3">
- <div id="ctl"><div id="layp"><div class="seg" id="seg"></div><div id="lay"></div><div class="row" style="margin-top:14px"><button class="b" data-go="2">← Edit</button><span class="sp"></span><button class="b p" data-go="4">Export →</button></div></div><div id="exp" hidden><h3 style="margin:0 0 4px;font-size:16px">Export</h3><p id="estat" style="color:var(--mut);margin:0 0 14px;font-size:13px"></p><div style="display:grid;gap:8px"><button class="b p" id="print">Print / Save PDF</button><button class="b" id="share">Share</button><button class="b" id="copy">Copy text</button><button class="b" id="dl">Download .txt</button></div><p style="color:var(--mut);font-size:12.5px;margin-top:14px">In the print dialog, choose Save as PDF and turn off headers and footers.</p><div class="row" style="margin-top:14px"><button class="b" data-go="3">← Layout</button></div></div></div>
+ <div id="ctl"><div id="layp"><div class="seg" id="seg"></div><div id="lay"></div><div class="row" style="margin-top:14px"><button class="b" data-go="2">← Edit</button><span class="sp"></span><button class="b p" data-go="4">Export →</button></div></div><div id="exp" hidden><h3 style="margin:0 0 4px;font-size:16px">Export</h3><p id="estat" style="color:var(--mut);margin:0 0 14px;font-size:13px"></p><div style="display:grid;gap:8px"><button class="b p" id="print">Print / Save PDF</button><button class="b" id="share">Share</button><button class="b" id="copy">Copy text</button><button class="b" id="saveq">Save as .qbp</button><button class="b" id="dl">Download .txt</button></div><p style="color:var(--mut);font-size:12.5px;margin-top:14px">In the print dialog, choose Save as PDF and turn off headers and footers.</p><div class="row" style="margin-top:14px"><button class="b" data-go="3">← Layout</button></div></div></div>
  <div id="prev"><div class="bar"><span id="pc"></span><span class="sp"></span><span>Zoom</span><input type="range" id="zoom" min="40" max="130" value="75" style="width:100px"></div>
  <div id="pages"></div></div>
 </section>
-<dialog id="dlg"></dialog><div id="toast"></div>
+<dialog id="dlg"></dialog><dialog id="cl"></dialog><div id="toast"></div>
 
 <script>
 const $=s=>document.querySelector(s);
@@ -111,9 +124,15 @@ const PRESETS={
  readable:{font:'Georgia',size:12,lh:1.5,gap:16,margin:1,meta:true,hdr:true,keep:true,bold:true,answers:'inline',order:'group'}};
 const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
 let Q=LS('qbpc2.q')||[],favs=LS('qbpc2.fav')||[],step=1;
-const S={title:'Practice Packet',sub:'',paper:'Letter',pb:false,pnum:true,layout:'readable',...PRESETS.readable,...(LS('qbpc2.s')||{})};
+const S={title:'Practice Packet',sub:'',paper:'Letter',pb:false,pnum:true,layout:'readable',fmt:true,pron:true,...PRESETS.readable,...(LS('qbpc2.s')||{})};
 if(!(LS('qbpc2.s')||{}).order&&S.group===false)S.order='list';delete S.group;
 const persist=()=>{LS('qbpc2.s',S);LS('qbpc2.q',Q);LS('qbpc2.fav',favs)};
+const rich=s=>h(s).replace(/&lt;(\/?)(b|i|u)&gt;/g,'<$1$2>');
+const depron=s=>String(s??'').replace(/\s*\((?:<[^>]*>)*["\u201c][^()]*?["\u201d](?:<[^>]*>)*\)/g,'');
+const R=s=>{s=S.pron?s:depron(s);return S.fmt?rich(s):h(strip(s))};
+const P=s=>strip(S.pron?s:depron(s));
+const keep=s=>String(s??'').replace(/<(\/?)strong\b[^>]*>/gi,'<$1b>').replace(/<(\/?)em\b[^>]*>/gi,'<$1i>').replace(/<(?!\/?(?:b|i|u)>)[^>]*>/gi,'').replace(/&nbsp;/g,' ').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+const dlFile=(blob,name)=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2200)};
 
 /* steps */
@@ -125,7 +144,7 @@ $('#steps').onclick=e=>{const b=e.target.closest('button');if(b)go(+b.dataset.n)
 document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(+b.dataset.go)});
 
 /* duplicate detection */
-const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const norm=s=>String(s||'').replace(/<[^>]+>/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const qkey=q=>q.type+':'+norm(q.type==='t'?q.text:q.leadin+' '+q.parts.join(' ')).slice(0,90);
 const hasText=q=>qkey(q).length>8;
 function uniq(arr,seen){const out=[];for(const q of arr){const k=qkey(q);if(hasText(q)&&seen.has(k))continue;seen.add(k);out.push(q)}return out}
@@ -135,31 +154,44 @@ const isDup=(q,i)=>hasText(q)&&Q.findIndex(x=>qkey(x)===qkey(q))<i;
 $('#cats').innerHTML=CATS.map(c=>`<label class="chip"><input type="checkbox" value="${c}">${c}</label>`).join('');
 $('#diffs').innerHTML=DIFFS.map(([v,l])=>`<label class="chip"><input type="checkbox" value="${v}">${v} · ${l}</label>`).join('');
 const checked=s=>[...document.querySelectorAll(s+' input:checked')].map(i=>i.value);
-async function fetchQ(kind,n){
- const p=new URLSearchParams({number:n}),c=checked('#cats'),d=checked('#diffs');
- if(c.length)p.set('categories',c.join(','));if(d.length)p.set('difficulties',d.join(','));
+async function fetchQ(kind,n,cats=checked('#cats'),diffs=checked('#diffs')){
+ const p=new URLSearchParams({number:n});
+ if(cats.length)p.set('categories',cats.join(','));if(diffs.length)p.set('difficulties',diffs.join(','));
  const r=await fetch(`https://www.qbreader.org/api/random-${kind}?${p}`);
  if(!r.ok)throw new Error('QBReader returned '+r.status);
  const j=await r.json();return j[kind==='tossup'?'tossups':'bonuses']||[];
 }
 const src=x=>[x.set?.name,x.packet?.number?'Packet '+x.packet.number:'',x.questionNumber?'#'+x.questionNumber:''].filter(Boolean).join(' ');
-const toT=t=>({type:'t',text:strip(t.question_sanitized??t.question),ans:strip(t.answer_sanitized??t.answer),cat:t.category,sub:t.subcategory,diff:t.difficulty,src:src(t)});
-const toB=b=>({type:'b',leadin:strip(b.leadin_sanitized??b.leadin),parts:(b.parts_sanitized??b.parts??[]).map(strip),answers:(b.answers_sanitized??b.answers??[]).map(strip),values:b.values||[10,10,10],cat:b.category,sub:b.subcategory,diff:b.difficulty,src:src(b)});
+const toT=t=>({type:'t',text:keep(t.question??t.question_sanitized),ans:keep(t.answer??t.answer_sanitized),cat:t.category,sub:t.subcategory,diff:t.difficulty,src:src(t)});
+const toB=b=>({type:'b',leadin:keep(b.leadin??b.leadin_sanitized),parts:(b.parts??b.parts_sanitized??[]).map(keep),answers:(b.answers??b.answers_sanitized??[]).map(keep),values:b.values||[10,10,10],cat:b.category,sub:b.subcategory,diff:b.difficulty,src:src(b)});
+const STD={Literature:4,History:4,Science:4,'Fine Arts':3,Religion:1,Mythology:1,Philosophy:1,'Social Science':1,Geography:1};
+$('#dgrid').innerHTML='<span></span><b>Tossups</b><b>Bonuses</b>'+CATS.map(c=>`<span>${c}</span><input type="number" min="0" max="30" value="0" data-c="${c}" data-k="t"><input type="number" min="0" max="30" value="0" data-c="${c}" data-k="b">`).join('');
+function dtot(){let t=0,b=0;document.querySelectorAll('#dgrid input').forEach(i=>{if(i.dataset.k==='t')t+=+i.value||0;else b+=+i.value||0});$('#dtot').textContent=`${t} tossups, ${b} bonuses`}
+$('#dgrid').oninput=dtot;
+$('#std').onclick=()=>{document.querySelectorAll('#dgrid input').forEach(i=>i.value=STD[i.dataset.c]||0);dtot()};
+$('#zero').onclick=()=>{document.querySelectorAll('#dgrid input').forEach(i=>i.value=0);dtot()};
+document.querySelectorAll('input[name=mix]').forEach(i=>i.onchange=()=>{const g=document.querySelector('input[name=mix]:checked').value==='genre';$('#m-genre').hidden=!g;$('#m-random').hidden=g});
+dtot();
 $('#go').onclick=async()=>{
- const nt=Math.min(50,+$('#nt').value||0),nb=Math.min(50,+$('#nb').value||0),btn=$('#go');
- if(!nt&&!nb)return($('#st').textContent='Enter at least one tossup or bonus.');
+ const btn=$('#go'),genre=document.querySelector('input[name=mix]:checked').value==='genre',cats=checked('#cats'),diffs=checked('#diffs');
+ const jobs=[];
+ if(genre)document.querySelectorAll('#dgrid input').forEach(i=>{const n=Math.min(30,+i.value||0);if(n)jobs.push({k:i.dataset.k,c:[i.dataset.c],n})});
+ else{const nt=Math.min(50,+$('#nt').value||0),nb=Math.min(50,+$('#nb').value||0);if(nt)jobs.push({k:'t',c:cats,n:nt});if(nb)jobs.push({k:'b',c:cats,n:nb})}
+ if(!jobs.length)return($('#st').textContent='Enter at least one question to generate.');
+ jobs.sort((a,b)=>(a.k==='t'?0:1)-(b.k==='t'?0:1));
  btn.disabled=true;$('#st').textContent='Fetching from qbreader.org…';
  try{
-  const base=$('#rep').checked?[]:Q,seen=new Set(base.filter(hasText).map(qkey));
-  let T=[],B=[],dup=0;
-  for(let tries=0;tries<4&&(T.length<nt||B.length<nb);tries++){
-   const [rt,rb]=await Promise.all([T.length<nt?fetchQ('tossup',nt-T.length):[],B.length<nb?fetchQ('bonus',nb-B.length):[]]);
-   const a=rt.map(toT),b=rb.map(toB),u1=uniq(a,seen),u2=uniq(b,seen);
-   dup+=a.length+b.length-u1.length-u2.length;T.push(...u1);B.push(...u2);
-  }
-  Q=[...base,...T,...B];persist();
-  toast(`Added ${T.length} tossups and ${B.length} bonuses.`+(dup?` Skipped ${dup} duplicate${dup>1?'s':''}.`:'')+((T.length<nt||B.length<nb)?' Fewer unique questions matched your filters than requested.':''));
-  go(2);
+  const base=$('#rep').checked?[]:Q,seen=new Set(base.filter(hasText).map(qkey));let dup=0;
+  const res=await Promise.all(jobs.map(async j=>{const got=[];
+   for(let t=0;t<4&&got.length<j.n;t++){
+    const raw=await fetchQ(j.k==='t'?'tossup':'bonus',j.n-got.length,j.c,diffs);
+    const m=raw.map(j.k==='t'?toT:toB),u=uniq(m,seen);dup+=m.length-u.length;got.push(...u);
+    if(!raw.length)break}
+   return got}));
+  const add=res.flat(),want=jobs.reduce((a,j)=>a+j.n,0);
+  Q=[...base,...add];persist();
+  toast(`Added ${add.length} question${add.length!==1?'s':''}.`+(dup?` Skipped ${dup} duplicate${dup>1?'s':''}.`:'')+(add.length<want?` Only ${add.length} of ${want} unique matches were available.`:''));
+  $('#st').textContent='';go(2);
  }catch(e){$('#st').textContent='Could not reach QBReader: '+e.message+'. Check your connection and try again.'}
  btn.disabled=false;
 };
@@ -171,12 +203,19 @@ function btn(l,t,fn,cls=''){const b=document.createElement('button');b.className
 function card(q,i){
  const d=document.createElement('div');d.className='card';
  const n=Q.slice(0,i+1).filter(x=>x.type===q.type).length;
- d.innerHTML=`<div class="tg"><span class="badge">${q.type==='t'?'Tossup':'Bonus'} ${n}</span>${isDup(q,i)?'<span class="badge" style="background:#5a2a2a;color:#ffb4b4">Duplicate</span>':''}${h(metaOf(q))}</div>`+(q.type==='t'?`<p>${h(q.text)}</p><p class="an">ANSWER: ${h(q.ans)}</p>`
-  :`<p>${h(q.leadin)}</p>`+q.parts.map((p,k)=>`<p class="pt">[${q.values?.[k]??10}] ${h(p)}</p><p class="an">ANSWER: ${h(q.answers[k])}</p>`).join(''));
+ d.innerHTML=`<div class="tg"><span class="badge">${q.type==='t'?'Tossup':'Bonus'} ${n}</span>${isDup(q,i)?'<span class="badge" style="background:#5a2a2a;color:#ffb4b4">Duplicate</span>':''}${h(metaOf(q))}</div>`+(q.type==='t'?`<p>${rich(q.text)}</p><p class="an">ANSWER: ${rich(q.ans)}</p>`
+  :`<p>${rich(q.leadin)}</p>`+q.parts.map((p,k)=>`<p class="pt">[${q.values?.[k]??10}] ${rich(p)}</p><p class="an">ANSWER: ${rich(q.answers[k])}</p>`).join(''));
  const a=document.createElement('div');a.className='ac';d.append(a);
  const isFav=q.fid&&favs.some(f=>f.fid===q.fid);
  const mv=k=>()=>{const j=i+k;if(j<0||j>=Q.length)return;[Q[i],Q[j]]=[Q[j],Q[i]];persist();list()};
  a.append(btn(isFav?'★':'☆','Favorite',()=>{if(isFav)favs=favs.filter(f=>f.fid!==q.fid);else{q.fid=q.fid||'f'+Date.now()+Math.random().toString(36).slice(2,6);favs.push(JSON.parse(JSON.stringify(q)))}persist();list();toast(isFav?'Removed from favorites':'Saved to favorites')}),
+  btn('↻','Replace with a new question of the same genre and difficulty',async e=>{
+   const b=e.currentTarget;b.disabled=true;
+   try{const cats=CATS.includes(q.cat)?[q.cat]:checked('#cats'),dif=q.diff!=null?[q.diff]:checked('#diffs'),seen=new Set(Q.filter(hasText).map(qkey));
+    for(let t=0;t<4;t++){const r=(await fetchQ(q.type==='t'?'tossup':'bonus',3,cats,dif)).map(q.type==='t'?toT:toB).filter(x=>!hasText(x)||!seen.has(qkey(x)));
+     if(r.length){Q[Q.indexOf(q)]=r[0];persist();list();toast('Question replaced');return}}
+    toast('No new matching question found')}catch(err){toast('Could not reach QBReader')}
+   b.disabled=false}),
   btn('↑','Move up',mv(-1)),btn('↓','Move down',mv(1)),
   btn('Edit','Edit',()=>edit(q,()=>{const f=favs.find(f=>f.fid===q.fid);if(f)Object.assign(f,JSON.parse(JSON.stringify(q)));persist();list()})),
   btn('Delete','Delete',()=>{Q.splice(i,1);persist();list()}));
@@ -208,7 +247,7 @@ $('#favs').onclick=()=>{
  $('#ec').onclick=()=>dlg.close();
  const fl=$('#fl'),draw=()=>{fl.innerHTML='';if(!favs.length)fl.innerHTML='<div class="empty">Star a question to keep it here for later packets.</div>';
   favs.forEach(q=>{const d=document.createElement('div');d.className='card';
-   d.innerHTML=`<div class="tg"><span class="badge">${q.type==='t'?'Tossup':'Bonus'}</span>${h(metaOf(q))}</div><p>${h((q.type==='t'?q.text:q.leadin).slice(0,180))}…</p><p class="an">${h(q.type==='t'?q.ans:q.answers.join(' / '))}</p>`;
+   d.innerHTML=`<div class="tg"><span class="badge">${q.type==='t'?'Tossup':'Bonus'}</span>${h(metaOf(q))}</div><p>${h(strip(q.type==='t'?q.text:q.leadin).slice(0,180))}…</p><p class="an">${h(strip(q.type==='t'?q.ans:q.answers.join(' / ')))}</p>`;
    const a=document.createElement('div');a.className='ac';d.append(a);
    a.append(btn('Remove','Remove favorite',()=>{favs=favs.filter(f=>f!==q);persist();draw();list()}),btn('+ Add to packet','',()=>{if(hasText(q)&&Q.some(x=>qkey(x)===qkey(q)))return toast('Already in your questions');Q.push(JSON.parse(JSON.stringify(q)));persist();list();toast('Added to your questions')},'p'));
    fl.append(d)})};
@@ -216,7 +255,7 @@ $('#favs').onclick=()=>{
 };
 
 /* step 3: controls */
-const SPEC=[['title','Title','text'],['sub','Subtitle','text'],['font','Font (whole document)','sel',FONTS],['size','Font size (pt)','num',[6,24,.5]],['lh','Line spacing','num',[1,2.5,.05]],['gap','Space between questions (pt)','num',[0,48,1]],['margin','Margins (in)','num',[.25,2,.05]],['paper','Paper size','sel',['Letter','A4']],['answers','Answers','sel',[['inline','After each question'],['end','Answer key at the end'],['none','Hide answers']]],['keep','Never split a question across pages','chk'],['order','Question order','sel',[['group','Tossups first, then bonuses'],['alt','Alternate tossup and bonus'],['list','Same order as the Edit page']]],['pb','Start bonuses on a new page','chk'],['meta','Show category, difficulty and source','chk'],['bold','Bold answer lines','chk'],['hdr','Running header','chk'],['pnum','Page numbers','chk']];
+const SPEC=[['title','Title','text'],['sub','Subtitle','text'],['font','Font (whole document)','sel',FONTS],['size','Font size (pt)','num',[6,24,.5]],['lh','Line spacing','num',[1,2.5,.05]],['gap','Space between questions (pt)','num',[0,48,1]],['margin','Margins (in)','num',[.25,2,.05]],['paper','Paper size','sel',['Letter','A4']],['answers','Answers','sel',[['inline','After each question'],['end','Answer key at the end'],['none','Hide answers']]],['keep','Never split a question across pages','chk'],['order','Question order','sel',[['group','Tossups first, then bonuses'],['alt','Alternate tossup and bonus'],['list','Same order as the Edit page']]],['pb','Start bonuses on a new page','chk'],['fmt','Keep underlines and italics from QBReader','chk'],['pron','Show pronunciation guides','chk'],['meta','Show category, difficulty and source','chk'],['bold','Bold answer lines','chk'],['hdr','Running header','chk'],['pnum','Page numbers','chk']];
 function ctl(){
  $('#seg').innerHTML=`<button data-l="compact" class="${S.layout==='compact'?'on':''}">Compact<small>Dense, like NAQT packets</small></button><button data-l="readable" class="${S.layout==='readable'?'on':''}">Readable<small>Roomy, clearly separated</small></button>`;
  $('#lay').innerHTML='<h3>Text and page</h3>'+SPEC.map(([k,l,t,o])=>{
@@ -231,7 +270,7 @@ $('#lay').oninput=e=>{const k=e.target.dataset.k;if(!k)return;const el=e.target;
 ctl();
 
 /* step 3: document */
-const an=a=>`<p class="an">ANSWER: ${h(a)}</p>`;
+const an=a=>`<p class="an">ANSWER: ${R(a)}</p>`;
 function order(){const T=Q.filter(q=>q.type==='t'),B=Q.filter(q=>q.type==='b');
  if(S.order==='group')return[...T,...B];
  if(S.order==='alt'){const o=[];for(let i=0;i<Math.max(T.length,B.length);i++){if(T[i])o.push(T[i]);if(B[i])o.push(B[i])}return o}
@@ -243,14 +282,14 @@ function units(){
  for(const q of seq){
   if(G&&q.type!==last){last=q.type;U.push({head:1,brk:q.type==='b'&&S.pb&&T.length>0,els:[q.type==='t'?'Tossups':'Bonuses']})}
   const n=q.type==='t'?++nt:++nb,inl=S.answers==='inline';
-  const parts=q.type==='t'?[`<p><b>${G?n+'.':(q.type==='t'?'Tossup ':'Bonus ')+n+'.'}</b> ${h(q.text)}</p>${inl?an(q.ans):''}`]
-   :[`<p><b>${G?n+'.':(q.type==='t'?'Tossup ':'Bonus ')+n+'.'}</b> ${h(q.leadin)}</p>`,...q.parts.map((p,i)=>`<p>[${q.values?.[i]??10}] ${h(p)}</p>${inl?an(q.answers[i]):''}`)];
+  const parts=q.type==='t'?[`<p><b>${G?n+'.':(q.type==='t'?'Tossup ':'Bonus ')+n+'.'}</b> ${R(q.text)}</p>${inl?an(q.ans):''}`]
+   :[`<p><b>${G?n+'.':(q.type==='t'?'Tossup ':'Bonus ')+n+'.'}</b> ${R(q.leadin)}</p>`,...q.parts.map((p,i)=>`<p>[${q.values?.[i]??10}] ${R(p)}</p>${inl?an(q.answers[i]):''}`)];
   if(S.meta&&metaOf(q))parts[parts.length-1]+=`<div class="mt">${h(metaOf(q))}</div>`;
   U.push({els:S.keep?[parts.join('')]:parts});
  }
  if(S.answers==='end'&&seq.length){
   U.push({head:1,brk:1,els:['Answer Key']});nt=nb=0;
-  for(const q of seq)U.push({els:[q.type==='t'?`<p><b>Tossup ${++nt}.</b> ${h(q.ans)}</p>`:`<p><b>Bonus ${++nb}.</b> ${q.answers.map(h).join(' / ')}</p>`]});
+  for(const q of seq)U.push({els:[q.type==='t'?`<p><b>Tossup ${++nt}.</b> ${R(q.ans)}</p>`:`<p><b>Bonus ${++nb}.</b> ${q.answers.map(a=>R(a)).join(' / ')}</p>`]});
  }
  return U;
 }
@@ -286,8 +325,8 @@ function asText(){
  const out=[S.title,S.sub,''];let nt=0,nb=0;
  const T=Q.filter(q=>q.type==='t'),B=Q.filter(q=>q.type==='b'),seq=order(),G=S.order==='group',ans=S.answers!=='none';
  for(const q of seq){
-  if(q.type==='t')out.push(`${(G?'':'Tossup ')+(++nt)+'.'} ${q.text}`,...(ans?['ANSWER: '+q.ans]:[]),'');
-  else out.push(`${(G?'':'Bonus ')+(++nb)+'.'} ${q.leadin}`,...q.parts.flatMap((p,i)=>[`[${q.values?.[i]??10}] ${p}`,...(ans?['ANSWER: '+q.answers[i]]:[])]),'');
+  if(q.type==='t')out.push(`${(G?'':'Tossup ')+(++nt)+'.'} ${P(q.text)}`,...(ans?['ANSWER: '+P(q.ans)]:[]),'');
+  else out.push(`${(G?'':'Bonus ')+(++nb)+'.'} ${P(q.leadin)}`,...q.parts.flatMap((p,i)=>[`[${q.values?.[i]??10}] ${P(p)}`,...(ans?['ANSWER: '+P(q.answers[i])]:[])]),'');
  }
  return out.join('\n').trim();
 }
@@ -299,6 +338,43 @@ $('#share').onclick=async()=>{
 };
 $('#dl').onclick=()=>{if(!Q.length)return toast('Add questions first');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([asText()],{type:'text/plain'}));a.download=(S.title||'packet').replace(/[^\w-]+/g,'-')+'.txt';a.click()};
 $('#zoom').oninput=()=>$('#pages').style.zoom=$('#zoom').value/100;
+
+/* .qbp files */
+function saveQbp(){if(!Q.length)return toast('Nothing to save yet');
+ dlFile(new Blob([JSON.stringify({format:'qbp',version:1,title:S.title,savedAt:new Date().toISOString(),settings:S,questions:Q},null,1)],{type:'application/json'}),(S.title||'packet').replace(/[^\w-]+/g,'-')+'.qbp')}
+$('#save').onclick=saveQbp;$('#saveq').onclick=saveQbp;
+$('#open').onclick=()=>$('#file').click();
+$('#file').onchange=async e=>{
+ const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{
+  const j=JSON.parse(await f.text());if(!Array.isArray(j.questions))throw 0;
+  const ok=j.questions.filter(q=>q&&((q.type==='t'&&'text' in q)||(q.type==='b'&&Array.isArray(q.parts)))).map(q=>q.type==='t'?{...q,ans:q.ans||''}:{...q,answers:q.parts.map((_,i)=>(q.answers||[])[i]||''),values:q.values||[10,10,10]});
+  if(!ok.length)throw 0;
+  if(Q.length&&!confirm(`Replace your ${Q.length} current questions with the ${ok.length} in this packet?`))return;
+  Q=ok;if(j.settings)for(const [k] of SPEC)if(k in j.settings)S[k]=j.settings[k];
+  if(PRESETS[j.settings?.layout])S.layout=j.settings.layout;
+  ctl();persist();go(2);toast(`Opened ${ok.length} questions`);
+ }catch(err){toast('That file is not a valid .qbp packet')}
+};
+
+/* changelog: to make an update show again for everyone, add an entry at the top of CHANGELOG and set VERSION to its v */
+const VERSION='1.3';
+const CHANGELOG=[
+ {v:'1.3',d:'Nov 23, 2026',t:['Category distribution: choose exactly how many tossups and bonuses per genre','Underlines and italics from QBReader are kept (turn off in Layout)','Pronunciation guides are shown (hide them in Layout)','Reroll button on every question','Save and open packets as .qbp files','This changelog']},
+ {v:'1.2',d:'Nov 23, 2026',t:['Duplicate detection when generating, with a Remove duplicates button','Option to alternate tossups and bonuses']},
+ {v:'1.1',d:'Nov 23, 2026',t:['Dark mode','Top bar is now Generate, Edit, Layout, Export','Export step with print, share, copy and .txt download']},
+ {v:'1.0',d:'Nov 23, 2026',t:['First release: generate from QBReader, edit questions, Compact and Readable layouts, favorites, print and share']}];
+function showCl(){
+ const [c,...old]=CHANGELOG,dlg=$('#cl');
+ dlg.innerHTML=`<h3>What's new</h3><p class="vtag">Version ${c.v} | ${c.d}</p><ul>${c.t.map(x=>`<li>${h(x)}</li>`).join('')}</ul>`
+  +(old.length?`<details><summary>Earlier updates</summary>${old.map(o=>`<p class="vtag" style="margin-top:10px">Version ${o.v} | ${o.d}</p><ul>${o.t.map(x=>`<li>${h(x)}</li>`).join('')}</ul>`).join('')}</details>`:'')
+  +`<div class="row end"><button class="b" id="clx">Close</button><button class="b p" id="cln">Do not show again</button></div>`;
+ $('#clx').onclick=()=>dlg.close();
+ $('#cln').onclick=()=>{LS('qbpc2.dis',VERSION);dlg.close();toast('You won\'t see this again until the next update')};
+ dlg.showModal();
+}
+$('#wn').onclick=showCl;
+if(LS('qbpc2.dis')!==VERSION)setTimeout(showCl,300);
 go(1);
 </script>
 </body></html>
